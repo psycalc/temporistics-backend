@@ -13,9 +13,35 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const winston = require('winston');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const mongoose = require('mongoose');
+const nodemailer = require('nodemailer');
 
 // Use body-parser middleware to parse the request body
 router.use(bodyParser.json());
+
+// Use passport middleware for authentication
+passport.use(new LocalStrategy({
+  usernameField: 'email',
+  passwordField: 'password'
+}, async (email, password, done) => {
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return done(null, false, { message: 'Incorrect email or password.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return done(null, false, { message: 'Incorrect email or password.' });
+    }
+
+    return done(null, user);
+  } catch (error) {
+    return done(error);
+  }
+}));
 
 // Route for handling GET requests to the user's profile
 router.get('/', authenticateUser, async (req, res) => {
@@ -82,5 +108,19 @@ router.put('/', authenticateUser, upload.single('profilePicture'), async (req, r
 
 // Use helmet middleware to add security headers
 router.use(helmet());
+
+// Use Mongoose to connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('MongoDB connected'))
+  .catch((error) => console.log(error));
+
+// Use Nodemailer to send emails
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USERNAME,
+    pass: process.env.EMAIL_PASSWORD
+  }
+});
 
 module.exports = router;
