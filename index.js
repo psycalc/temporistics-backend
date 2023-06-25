@@ -1,34 +1,29 @@
 const express = require('express');
 const app = express();
 
-// Route for handling GET requests to the root URL
-app.get('/', (req, res) => {
-  res.send('Welcome to the dating app!');
-});
+// Middleware for parsing JSON data
+app.use(express.json());
 
-// Route for handling GET requests to the user's profile
-app.get('/profile', (req, res) => {
-  res.send('This is your dating profile!');
-});
+// Import routes
+const indexRouter = require('./routes/index');
+const profileRouter = require('./routes/profile');
+const searchRouter = require('./routes/search');
+const matchesRouter = require('./routes/matches');
+const settingsRouter = require('./routes/settings');
+const chatRouter = require('./routes/chat');
 
-// Route for handling GET requests to search for other users
-app.get('/search', (req, res) => {
-  res.send('Search for other users here!');
-});
+// Use routes
+app.use('/', indexRouter);
+app.use('/profile', profileRouter);
+app.use('/search', searchRouter);
+app.use('/matches', matchesRouter);
+app.use('/settings', settingsRouter);
+app.use('/chat', chatRouter);
 
-// Route for handling GET requests to view matches
-app.get('/matches', (req, res) => {
-  res.send('View your matches here!');
-});
-
-// Route for handling POST requests to update user settings
-app.post('/settings', (req, res) => {
-  res.send('Update your settings here!');
-});
-
-// Route for handling POST requests to send a message to another user
-app.post('/chat', (req, res) => {
-  res.send('Send a message to another user here!');
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something went wrong!');
 });
 
 // Start the server
